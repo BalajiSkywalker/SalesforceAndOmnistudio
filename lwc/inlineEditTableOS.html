@@ -1,0 +1,22 @@
+<template>
+    
+    <div>
+    
+        <lightning-datatable key-field="Id" data={displayedRecords} columns={column_data} default-sort-direction='asc'
+            sorted-by={sorted_by} sorted-direction={sorted_direction} onsort={on_sort} max-row-selection="1"
+            class="slds-table slds-table_bordered custom-datatable" onrowselection={handleSelectedMembers}
+            selected-rows={selectedIds} oncellchange={handleCellChange} draft-values={editedRows} onsave={handleSave}>
+        </lightning-datatable>
+        
+    
+    </div>
+    <div class="pagination-controls">
+            <lightning-button label="Previous" onclick={handlePrev} disabled={isPrevDisabled}>
+            </lightning-button>
+            <span>Page {currentPage} of {totalPages}</span>
+            <lightning-button label="Next" onclick={handleNext} disabled={isNextDisabled}>
+            </lightning-button>
+        </div>
+   
+
+</template>
