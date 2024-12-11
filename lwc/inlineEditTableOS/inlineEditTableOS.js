@@ -17,6 +17,7 @@ export default class InlineEditTableOS extends OmniscriptBaseMixin(LightningElem
     @track masterSelected=[];
 
      @track editedRows = {}; // Track rows edited by the user (id-based mapping)
+     @track editedData=[];
 
 
 
@@ -28,6 +29,13 @@ export default class InlineEditTableOS extends OmniscriptBaseMixin(LightningElem
         if(this.initialData){
             this.recordsToDisplay =this.parseJson(this.initialData);
              this.totalPages = Math.ceil(this.recordsToDisplay.length / this.pageSize);
+             if(this.omniJsonData.updatedTableData){
+             this.editedData = JSON.parse(JSON.stringify(this.omniJsonData.updatedTableData)); // Clone initial data
+
+             }else{
+             this.editedData = JSON.parse(JSON.stringify(this.recordsToDisplay)); // Clone initial data
+
+             }
         this.updateDisplayedRecords();
         }
         
@@ -56,10 +64,14 @@ export default class InlineEditTableOS extends OmniscriptBaseMixin(LightningElem
     return parsedData;
 }
 
-    handleCellChange(event) {
+     handleCellChange(event) {
         const { draftValues } = event.detail; // Edited values in lightning-datatable
         draftValues.forEach((draft) => {
-            this.editedRows[draft.Id] = { ...this.editedRows[draft.Id], ...draft };
+            const rowIndex = this.editedData.findIndex((row) => row.Id === draft.Id);
+              this.editedRows[draft.Id] = { ...this.editedRows[draft.Id], ...draft };
+            if (rowIndex !== -1) {
+                this.editedData[rowIndex] = { ...this.editedData[rowIndex], ...draft };
+            }
         });
     }
      
@@ -82,20 +94,22 @@ export default class InlineEditTableOS extends OmniscriptBaseMixin(LightningElem
         this.template.querySelector('lightning-datatable').draftValues = [];
         this.editedRows = {};
 
-        // Update OmniScript JSON with edited data and selected rows
         this.omniApplyCallResp({
-            updatedTableData: updatedData,
-            selectedRowIds: this.selectedRows,
+            updatedTableData: this.editedData,
+            selectedRowIds: this.selectedIds,
         });
 
-        // Clear edited rows tracking
-        this.editedRows = {};
+        // Clear draft values in the datatable
+        const datatable = this.template.querySelector('lightning-datatable');
+        if (datatable) {
+            datatable.draftValues = [];
+        }
     }
      updateDisplayedRecords() {
         const startIdx = (this.currentPage - 1) * this.pageSize;
         const endIdx = startIdx + this.pageSize;
 
-        this.displayedRecords = this.recordsToDisplay.slice(startIdx, endIdx);
+        this.displayedRecords =  this.editedData.slice(startIdx, endIdx); // Use editedData for display
         if(this.masterSelected.length>0){
             this.selectedIds = this.displayedRecords
                 .map((record) => record.Id)
